@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block title %}导入{{ kind }}{% endblock %}
+{% block content %}
+<div class="narrow"><div class="page-heading"><div><p class="eyebrow">批量处理</p><h1>导入{{ kind }}</h1><p>请先下载模板，保持首行字段名称不变。</p></div></div>
+<div class="import-layout">
+  <section class="panel form-panel"><form method="post" enctype="multipart/form-data">{% csrf_token %}{{ form.as_p }}<button class="button primary" type="submit">开始导入</button></form></section>
+  <aside class="guide"><h2>文件要求</h2><p>仅支持 Excel `.xlsx` 文件，最大 5 MB。</p>
+  {% if kind == '课程' %}<p>相同课程编号会更新原课程，不会重复创建。</p><a class="button" href="{% url 'download_template' 'courses' %}">下载课程模板</a>
+  {% else %}<p>相同登录账号会更新姓名和部门；密码留空时保留原密码。</p><a class="button" href="{% url 'download_template' 'teachers' %}">下载教师模板</a>{% endif %}</aside>
+</div></div>
+{% endblock %}

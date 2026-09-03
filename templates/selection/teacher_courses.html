@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}课程大厅{% endblock %}
+{% block content %}
+<div class="page-heading"><div><p class="eyebrow">课程大厅</p><h1>选择课程</h1><p>已选择 {{ selection_total }} / {{ setting.max_courses_per_teacher }} 门课程</p></div><a class="button" href="{% url 'my_selections' %}">查看我的选课</a></div>
+{% if setting.notice %}<div class="notice">{{ setting.notice }}</div>{% endif %}
+<section class="status-band {% if setting.is_open %}open{% endif %}"><div><span class="status-dot"></span><strong>{% if setting.is_open %}当前可以选课{% else %}当前未开放选课{% endif %}</strong></div><p>{% if setting.selection_end %}截止时间：{{ setting.selection_end|date:"Y-m-d H:i" }}{% else %}具体时间以管理员通知为准{% endif %}</p></section>
+<form class="filterbar" method="get"><input name="q" value="{{ query }}" placeholder="搜索课程名称、编号或类别"><button class="button" type="submit">搜索</button></form>
+<div class="course-grid">
+{% for course in courses %}<article class="course-card"><div class="course-top"><span class="course-code">{{ course.code }}</span><span class="badge">{{ course.category|default:"课程" }}</span></div><h2>{{ course.name }}</h2><p>{{ course.description|default:"暂无课程说明"|truncatechars:100 }}</p><div class="course-footer"><div><strong>{{ course.remaining }}</strong><span>剩余名额</span></div>{% if course.id in selected_ids %}<span class="chosen">已选择</span>{% elif setting.is_open and course.remaining > 0 and selection_total < setting.max_courses_per_teacher %}<form method="post" action="{% url 'choose_course' course.pk %}">{% csrf_token %}<button class="button primary" type="submit">选择课程</button></form>{% else %}<button class="button" disabled>暂不可选</button>{% endif %}</div></article>
+{% empty %}<div class="empty-state">没有符合条件的课程。</div>{% endfor %}
+</div>
+{% endblock %}

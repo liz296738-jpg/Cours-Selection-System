@@ -1,0 +1,46 @@
+{% load static %}
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}教师选课{% endblock %} | 招生就业处</title>
+  <link rel="stylesheet" href="{% static 'css/app.css' %}">
+</head>
+<body>
+  {% if user.is_authenticated %}
+  <header class="topbar">
+    <a class="brand" href="{% url 'dashboard' %}">
+      <span class="brand-mark">招</span>
+      <span><strong>教师选课系统</strong><small>招生就业处</small></span>
+    </a>
+    <nav class="topnav" aria-label="主导航">
+      {% if user.is_portal_admin %}
+        <a href="{% url 'control_dashboard' %}">概览</a>
+        <a href="{% url 'course_list' %}">课程</a>
+        <a href="{% url 'teacher_list' %}">教师</a>
+        <a href="{% url 'results' %}">选课结果</a>
+        <a href="{% url 'settings_edit' %}">选课设置</a>
+      {% else %}
+        <a href="{% url 'teacher_courses' %}">课程大厅</a>
+        <a href="{% url 'my_selections' %}">我的选课</a>
+      {% endif %}
+    </nav>
+    <div class="account">
+      <span>{{ user.display_name|default:user.username }}</span>
+      <form method="post" action="{% url 'logout' %}">{% csrf_token %}<button class="link-button" type="submit">退出</button></form>
+    </div>
+  </header>
+  {% endif %}
+
+  <main class="{% if not user.is_authenticated %}auth-main{% else %}page{% endif %}">
+    {% if messages %}
+      <div class="messages" aria-live="polite">
+        {% for message in messages %}<div class="message {{ message.tags }}">{{ message }}</div>{% endfor %}
+      </div>
+    {% endif %}
+    {% block content %}{% endblock %}
+  </main>
+  <footer class="footer">招生就业处教师选课系统</footer>
+</body>
+</html>

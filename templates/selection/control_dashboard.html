@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}管理概览{% endblock %}
+{% block content %}
+<div class="page-heading">
+  <div><p class="eyebrow">管理工作台</p><h1>选课概览</h1><p>集中查看课程、教师与当前选课进度。</p></div>
+  <a class="button primary" href="{% url 'settings_edit' %}">设置选课规则</a>
+</div>
+
+<section class="status-band {% if setting.is_open %}open{% endif %}">
+  <div><span class="status-dot"></span><strong>{% if setting.is_open %}选课进行中{% else %}选课未开放{% endif %}</strong></div>
+  <p>每位教师最多选择 {{ setting.max_courses_per_teacher }} 门课程{% if setting.selection_end %}，截止 {{ setting.selection_end|date:"Y-m-d H:i" }}{% endif %}</p>
+</section>
+
+<section class="stat-grid" aria-label="数据概览">
+  <div class="stat"><span>教师账号</span><strong>{{ teacher_count }}</strong><small>当前启用</small></div>
+  <div class="stat"><span>课程总数</span><strong>{{ course_count }}</strong><small>{{ active_course_count }} 门可选</small></div>
+  <div class="stat"><span>选课记录</span><strong>{{ selection_count }}</strong><small>当前有效</small></div>
+</section>
+
+<div class="split-layout">
+  <section>
+    <div class="section-heading"><h2>常用操作</h2></div>
+    <div class="action-list">
+      <a href="{% url 'course_create' %}"><strong>新增课程</strong><span>手动录入一门课程</span></a>
+      <a href="{% url 'import_courses' %}"><strong>导入课程</strong><span>通过 Excel 批量更新</span></a>
+      <a href="{% url 'import_teachers' %}"><strong>导入教师</strong><span>批量创建登录账号</span></a>
+      <a href="{% url 'export_results' %}"><strong>导出结果</strong><span>下载选课结果 Excel</span></a>
+    </div>
+  </section>
+  <section>
+    <div class="section-heading"><h2>最近操作</h2></div>
+    <div class="table-wrap compact"><table><thead><tr><th>操作</th><th>人员</th><th>时间</th></tr></thead><tbody>
+      {% for log in recent_logs %}<tr><td><strong>{{ log.action }}</strong><small>{{ log.detail|truncatechars:35 }}</small></td><td>{{ log.user|default:"系统" }}</td><td>{{ log.created_at|date:"m-d H:i" }}</td></tr>
+      {% empty %}<tr><td colspan="3" class="empty">暂无操作记录</td></tr>{% endfor %}
+    </tbody></table></div>
+  </section>
+</div>
+{% endblock %}

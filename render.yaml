@@ -1,0 +1,29 @@
+services:
+  - type: web
+    name: teacher-course-selection
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt && python manage.py collectstatic --noinput
+    startCommand: python manage.py migrate && python manage.py bootstrap_admin && gunicorn config.wsgi:application
+    healthCheckPath: /health/
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.9
+      - key: DEBUG
+        value: "false"
+      - key: SECURE_SSL_REDIRECT
+        value: "true"
+      - key: USE_MANIFEST_STATIC
+        value: "true"
+      - key: SECURE_HSTS_SECONDS
+        value: "3600"
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DATABASE_URL
+        sync: false
+      - key: ADMIN_USERNAME
+        sync: false
+      - key: ADMIN_PASSWORD
+        sync: false
+      - key: ADMIN_NAME
+        value: 系统管理员

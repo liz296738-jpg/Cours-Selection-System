@@ -1,0 +1,6 @@
+{% extends "base.html" %}
+{% block title %}{% if course %}编辑{% else %}新增{% endif %}课程{% endblock %}
+{% block content %}
+<div class="narrow"><div class="page-heading"><div><p class="eyebrow">课程管理</p><h1>{% if course %}编辑课程{% else %}新增课程{% endif %}</h1></div><a class="button" href="{% url 'course_list' %}">返回列表</a></div>
+<form method="post" class="panel form-panel">{% csrf_token %}{{ form.as_p }}<div class="form-actions"><button class="button primary" type="submit">保存课程</button></div></form></div>
+{% endblock %}

@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block title %}选课结果{% endblock %}
+{% block content %}
+<div class="page-heading"><div><p class="eyebrow">统计与归档</p><h1>选课结果</h1><p>按课程查看教师名单和名额使用情况。</p></div><a class="button primary" href="{% url 'export_results' %}">导出 Excel</a></div>
+<div class="result-list">
+{% for course in courses %}<section class="result-row"><div class="result-course"><strong>{{ course.name }}</strong><span>{{ course.code }} · {{ course.category|default:"未分类" }}</span></div><div class="capacity"><strong>{{ course.selection_total }}/{{ course.capacity }}</strong><span>已选/名额</span></div><div class="name-list">{% for item in course.selections.all %}<span>{{ item.teacher.display_name }}{% if item.teacher.department %} · {{ item.teacher.department }}{% endif %}</span>{% empty %}<span class="muted">暂无教师选择</span>{% endfor %}</div></section>
+{% empty %}<div class="empty-state">还没有课程。</div>{% endfor %}
+</div>
+{% endblock %}

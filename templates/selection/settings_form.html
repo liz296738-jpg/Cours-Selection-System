@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block title %}选课设置{% endblock %}
+{% block content %}
+<div class="page-heading"><div><p class="eyebrow">规则配置</p><h1>选课设置</h1><p>开放状态、时间范围和教师选课数量均由这里控制。</p></div></div>
+<form method="post" class="panel form-panel settings-grid">{% csrf_token %}
+  {{ form.as_p }}
+  <div class="form-actions"><button class="button primary" type="submit">保存设置</button></div>
+</form>
+{% endblock %}
