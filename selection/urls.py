@@ -21,6 +21,7 @@ urlpatterns = [
     path("control/template/<str:kind>/", views.download_template, name="download_template"),
     path("control/results/", views.results, name="results"),
     path("control/results/export/", views.export_results, name="export_results"),
+    path("control/results/export-unselected/", views.export_unselected_teachers, name="export_unselected_teachers"),
     path("courses/", views.teacher_courses, name="teacher_courses"),
     path("courses/<int:pk>/choose/", views.choose_course, name="choose_course"),
     path("my-selections/", views.my_selections, name="my_selections"),

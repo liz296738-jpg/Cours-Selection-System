@@ -42,5 +42,26 @@
     {% block content %}{% endblock %}
   </main>
   <footer class="footer">招生就业处教师选课系统</footer>
+  <script>
+    document.querySelectorAll("form[data-confirm]").forEach((form) => {
+      form.addEventListener("submit", (event) => {
+        if (!window.confirm(form.dataset.confirm)) event.preventDefault();
+      });
+    });
+    document.querySelectorAll("form[data-confirm-deactivation]").forEach((form) => {
+      form.addEventListener("submit", (event) => {
+        const active = form.querySelector("#id_is_active");
+        if (active && !active.checked && form.dataset.confirmDeactivation && !window.confirm(form.dataset.confirmDeactivation)) {
+          event.preventDefault();
+        }
+      });
+    });
+    document.querySelectorAll(".file-picker input").forEach((input) => {
+      input.addEventListener("change", () => {
+        const label = input.closest(".file-picker").querySelector("[data-file-name]");
+        label.textContent = input.files[0] ? input.files[0].name : "未选择文件";
+      });
+    });
+  </script>
 </body>
 </html>

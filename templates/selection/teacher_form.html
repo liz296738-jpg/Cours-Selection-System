@@ -2,5 +2,5 @@
 {% block title %}{% if teacher %}编辑{% else %}新增{% endif %}教师{% endblock %}
 {% block content %}
 <div class="narrow"><div class="page-heading"><div><p class="eyebrow">账号管理</p><h1>{% if teacher %}编辑教师{% else %}新增教师{% endif %}</h1></div><a class="button" href="{% url 'teacher_list' %}">返回列表</a></div>
-<form method="post" class="panel form-panel">{% csrf_token %}{{ form.as_p }}<div class="form-actions"><button class="button primary" type="submit">保存账号</button></div></form></div>
+<form method="post" class="panel form-panel" data-confirm-deactivation="{% if teacher %}停用后该教师不能登录或继续选课。{% if teacher_selection_total %}该教师已有 {{ teacher_selection_total }} 条选课记录。{% endif %} 是否继续？{% endif %}">{% csrf_token %}{{ form.as_p }}<div class="form-actions"><button class="button primary" type="submit">保存账号</button></div></form></div>
 {% endblock %}

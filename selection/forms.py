@@ -41,6 +41,12 @@ class CourseForm(StyledFormMixin, forms.ModelForm):
         fields = ["code", "name", "category", "description", "capacity", "is_active"]
         widgets = {"description": forms.Textarea(attrs={"rows": 4})}
 
+    def clean_capacity(self):
+        capacity = self.cleaned_data["capacity"]
+        if self.instance.pk and self.instance.selections.count() > capacity:
+            raise forms.ValidationError("名额不能低于当前已选教师人数。")
+        return capacity
+
 
 class TeacherForm(StyledFormMixin, forms.ModelForm):
     password = forms.CharField(label="初始密码", widget=forms.PasswordInput, required=False,

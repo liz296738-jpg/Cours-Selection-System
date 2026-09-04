@@ -5,15 +5,17 @@ from django.contrib.auth import update_session_auth_hash
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ValidationError
 from django.db import transaction
-from django.db.models import Count, Q
+from django.core.paginator import Paginator
+from django.db.models import Count, Prefetch, Q
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
-from openpyxl import Workbook, load_workbook
+from openpyxl import Workbook
 from openpyxl.styles import Font, PatternFill
 
 from .decorators import portal_admin_required, teacher_required
 from .forms import CourseForm, ExcelUploadForm, SiteSettingForm, StyledPasswordChangeForm, TeacherForm
+from .imports import parse_course_import, parse_teacher_import
 from .models import AuditLog, Course, Selection, SiteSetting, User
 from .services import cancel_selection, select_course
 
@@ -75,10 +77,12 @@ def settings_edit(request):
 @portal_admin_required
 def course_list(request):
     query = request.GET.get("q", "").strip()
-    courses = Course.objects.annotate(selection_total=Count("selections"))
+    courses = Course.objects.annotate(selection_total=Count("selections")).order_by("code", "id")
     if query:
         courses = courses.filter(Q(code__icontains=query) | Q(name__icontains=query) | Q(category__icontains=query))
-    return render(request, "selection/course_list.html", {"courses": courses, "query": query})
+    return render(request, "selection/course_list.html", {
+        "courses": _paginate(request, courses), "query": query, "page_size": _page_size(request),
+    })
 
 
 @portal_admin_required
@@ -109,8 +113,15 @@ def course_toggle(request, pk):
 
 @portal_admin_required
 def teacher_list(request):
-    teachers = User.objects.filter(role=User.Role.TEACHER).annotate(selection_total=Count("selections"))
-    return render(request, "selection/teacher_list.html", {"teachers": teachers})
+    teachers = User.objects.filter(role=User.Role.TEACHER).annotate(selection_total=Count("selections")).order_by("username", "id")
+    query = request.GET.get("q", "").strip()
+    if query:
+        teachers = teachers.filter(
+            Q(username__icontains=query) | Q(display_name__icontains=query) | Q(department__icontains=query)
+        )
+    return render(request, "selection/teacher_list.html", {
+        "teachers": _paginate(request, teachers), "query": query, "page_size": _page_size(request),
+    })
 
 
 @portal_admin_required
@@ -122,86 +133,109 @@ def teacher_edit(request, pk=None):
         AuditLog.objects.create(user=request.user, action="编辑教师" if teacher else "新增教师", detail=str(obj))
         messages.success(request, "教师账号已保存。")
         return redirect("teacher_list")
-    return render(request, "selection/teacher_form.html", {"form": form, "teacher": teacher})
+    return render(request, "selection/teacher_form.html", {
+        "form": form, "teacher": teacher,
+        "teacher_selection_total": teacher.selections.count() if teacher else 0,
+    })
 
 
-def _cell(row, index):
-    value = row[index].value if len(row) > index else None
-    return str(value).strip() if value is not None else ""
+def _page_size(request):
+    try:
+        value = int(request.GET.get("page_size", 20))
+    except (TypeError, ValueError):
+        value = 20
+    return value if value in {20, 50, 100} else 20
+
+
+def _paginate(request, queryset):
+    return Paginator(queryset, _page_size(request)).get_page(request.GET.get("page"))
+
+
+def _pending_import_key(kind):
+    return f"pending_import_{kind}"
+
+
+def _preview_import(request, kind, parser):
+    form = ExcelUploadForm(request.POST or None, request.FILES or None)
+    preview = None
+    if request.method == "POST" and request.POST.get("action") == "preview" and form.is_valid():
+        try:
+            parsed = parser(form.cleaned_data["file"])
+            request.session[_pending_import_key(kind)] = {"rows": parsed.rows}
+            request.session.modified = True
+            preview = parsed
+        except ValueError as exc:
+            form.add_error("file", str(exc))
+    return form, preview
 
 
 @portal_admin_required
 def import_courses(request):
-    form = ExcelUploadForm(request.POST or None, request.FILES or None)
-    if request.method == "POST" and form.is_valid():
-        try:
-            wb = load_workbook(form.cleaned_data["file"], read_only=True, data_only=True)
-            rows = list(wb.active.iter_rows())
+    if request.method == "POST" and request.POST.get("action") == "confirm":
+        pending = request.session.get(_pending_import_key("courses"))
+        if not pending:
+            messages.error(request, "导入预览已失效，请重新选择文件。")
+        else:
             created = updated = 0
-            with transaction.atomic():
-                for number, row in enumerate(rows[1:], start=2):
-                    code, name = _cell(row, 0), _cell(row, 1)
-                    if not code and not name:
-                        continue
-                    if not code or not name:
-                        raise ValueError(f"第 {number} 行缺少课程编号或名称")
-                    try:
-                        capacity = int(row[3].value or 1)
-                    except (TypeError, ValueError):
-                        raise ValueError(f"第 {number} 行名额必须是整数")
-                    if capacity < 1:
-                        raise ValueError(f"第 {number} 行名额必须大于 0")
-                    _, was_created = Course.objects.update_or_create(code=code, defaults={
-                        "name": name, "category": _cell(row, 2), "capacity": capacity,
-                        "description": _cell(row, 4), "is_active": True, "created_by": request.user,
-                    })
-                    created += int(was_created)
-                    updated += int(not was_created)
+            try:
+                with transaction.atomic():
+                    for row in pending["rows"]:
+                        course = Course.objects.select_for_update().filter(code=row["code"]).first()
+                        if course:
+                            if course.selections.count() > row["capacity"]:
+                                raise ValueError(f"课程 {course.code} 的名额不能低于当前已选教师人数")
+                            for field, value in row.items():
+                                setattr(course, field, value)
+                            course.is_active = True
+                            course.save()
+                            updated += 1
+                        else:
+                            Course.objects.create(**row, is_active=True, created_by=request.user)
+                            created += 1
+            except ValueError as exc:
+                messages.error(request, f"导入未执行：{exc}")
+                return redirect("import_courses")
+            request.session.pop(_pending_import_key("courses"), None)
             AuditLog.objects.create(user=request.user, action="导入课程", detail=f"新增 {created}，更新 {updated}")
             messages.success(request, f"导入完成：新增 {created} 门，更新 {updated} 门。")
             return redirect("course_list")
-        except Exception as exc:
-            form.add_error("file", f"导入失败：{exc}")
-    return render(request, "selection/import_form.html", {"form": form, "kind": "课程"})
+    form, preview = _preview_import(request, "courses", parse_course_import)
+    return render(request, "selection/import_form.html", {"form": form, "kind": "课程", "preview": preview})
 
 
 @portal_admin_required
 def import_teachers(request):
-    form = ExcelUploadForm(request.POST or None, request.FILES or None)
-    if request.method == "POST" and form.is_valid():
-        try:
-            wb = load_workbook(form.cleaned_data["file"], read_only=True, data_only=True)
-            rows = list(wb.active.iter_rows())
+    if request.method == "POST" and request.POST.get("action") == "confirm":
+        pending = request.session.get(_pending_import_key("teachers"))
+        if not pending:
+            messages.error(request, "导入预览已失效，请重新选择文件。")
+        else:
             created = updated = 0
-            with transaction.atomic():
-                for number, row in enumerate(rows[1:], start=2):
-                    username, name, department, password = (_cell(row, i) for i in range(4))
-                    if not any((username, name, department, password)):
-                        continue
-                    if not username or not name:
-                        raise ValueError(f"第 {number} 行缺少登录账号或姓名")
-                    obj, was_created = User.objects.get_or_create(username=username, defaults={
-                        "display_name": name, "department": department, "role": User.Role.TEACHER,
-                    })
-                    if obj.is_superuser or obj.role == User.Role.ADMIN:
-                        raise ValueError(f"第 {number} 行账号与管理员账号冲突")
-                    obj.display_name, obj.department, obj.role, obj.is_active = name, department, User.Role.TEACHER, True
-                    if password:
-                        if len(password) < 8:
-                            raise ValueError(f"第 {number} 行密码不足 8 位")
-                        obj.set_password(password)
-                        obj.must_change_password = True
-                    elif was_created:
-                        raise ValueError(f"第 {number} 行新账号必须填写初始密码")
-                    obj.save()
-                    created += int(was_created)
-                    updated += int(not was_created)
+            try:
+                with transaction.atomic():
+                    for row in pending["rows"]:
+                        password_hash = row["password_hash"]
+                        values = {key: value for key, value in row.items() if key != "password_hash"}
+                        obj, was_created = User.objects.get_or_create(
+                            username=row["username"], defaults={**values, "role": User.Role.TEACHER}
+                        )
+                        if obj.is_superuser or obj.role == User.Role.ADMIN:
+                            raise ValueError(f"账号与管理员账号冲突：{obj.username}")
+                        obj.display_name, obj.department, obj.role, obj.is_active = row["display_name"], row["department"], User.Role.TEACHER, True
+                        if password_hash:
+                            obj.password, obj.must_change_password = password_hash, True
+                        obj.save()
+                        created += was_created
+                        updated += not was_created
+            except ValueError as exc:
+                messages.error(request, f"导入未执行：{exc}")
+                return redirect("import_teachers")
+            request.session.pop(_pending_import_key("teachers"), None)
             AuditLog.objects.create(user=request.user, action="导入教师", detail=f"新增 {created}，更新 {updated}")
             messages.success(request, f"导入完成：新增 {created} 人，更新 {updated} 人。")
             return redirect("teacher_list")
-        except Exception as exc:
-            form.add_error("file", f"导入失败：{exc}")
-    return render(request, "selection/import_form.html", {"form": form, "kind": "教师"})
+    form, preview = _preview_import(request, "teachers", parse_teacher_import)
+    return render(request, "selection/import_form.html", {"form": form, "kind": "教师", "preview": preview})
 
 
 def _workbook_response(workbook, filename):
@@ -240,8 +274,20 @@ def download_template(request, kind):
 
 @portal_admin_required
 def results(request):
-    courses = Course.objects.annotate(selection_total=Count("selections")).prefetch_related("selections__teacher")
-    return render(request, "selection/results.html", {"courses": courses})
+    query = request.GET.get("q", "").strip()
+    department = request.GET.get("department", "").strip()
+    selected = Selection.objects.select_related("teacher").order_by("selected_at")
+    if department:
+        selected = selected.filter(teacher__department=department)
+    count_filter = Q(selections__teacher__department=department) if department else Q()
+    courses = Course.objects.annotate(selection_total=Count("selections", filter=count_filter))
+    if query:
+        courses = courses.filter(Q(code__icontains=query) | Q(name__icontains=query))
+    courses = courses.prefetch_related(Prefetch("selections", queryset=selected, to_attr="filtered_selections"))
+    departments = User.objects.filter(role=User.Role.TEACHER).exclude(department="").order_by("department").values_list("department", flat=True).distinct()
+    return render(request, "selection/results.html", {
+        "courses": courses, "query": query, "department": department, "departments": departments,
+    })
 
 
 @portal_admin_required
@@ -258,6 +304,23 @@ def export_results(request):
     _style_header(ws)
     AuditLog.objects.create(user=request.user, action="导出选课结果")
     return _workbook_response(wb, "course-selection-results.xlsx")
+
+
+@portal_admin_required
+def export_unselected_teachers(request):
+    department = request.GET.get("department", "").strip()
+    teachers = User.objects.filter(role=User.Role.TEACHER, is_active=True, selections__isnull=True)
+    if department:
+        teachers = teachers.filter(department=department)
+    wb, ws = Workbook(), None
+    ws = wb.active
+    ws.title = "未选课教师"
+    ws.append(["姓名", "登录账号", "部门", "账号状态"])
+    for teacher in teachers.order_by("department", "display_name", "username"):
+        ws.append([teacher.display_name, teacher.username, teacher.department, "启用"])
+    _style_header(ws)
+    AuditLog.objects.create(user=request.user, action="导出未选课教师", detail=f"部门：{department or '全部'}")
+    return _workbook_response(wb, "unselected-teachers.xlsx")
 
 
 @teacher_required

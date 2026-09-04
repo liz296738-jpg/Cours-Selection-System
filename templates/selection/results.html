@@ -1,9 +1,7 @@
 {% extends "base.html" %}
 {% block title %}选课结果{% endblock %}
 {% block content %}
-<div class="page-heading"><div><p class="eyebrow">统计与归档</p><h1>选课结果</h1><p>按课程查看教师名单和名额使用情况。</p></div><a class="button primary" href="{% url 'export_results' %}">导出 Excel</a></div>
-<div class="result-list">
-{% for course in courses %}<section class="result-row"><div class="result-course"><strong>{{ course.name }}</strong><span>{{ course.code }} · {{ course.category|default:"未分类" }}</span></div><div class="capacity"><strong>{{ course.selection_total }}/{{ course.capacity }}</strong><span>已选/名额</span></div><div class="name-list">{% for item in course.selections.all %}<span>{{ item.teacher.display_name }}{% if item.teacher.department %} · {{ item.teacher.department }}{% endif %}</span>{% empty %}<span class="muted">暂无教师选择</span>{% endfor %}</div></section>
-{% empty %}<div class="empty-state">还没有课程。</div>{% endfor %}
-</div>
+<div class="page-heading"><div><p class="eyebrow">统计与归档</p><h1>选课结果</h1><p>按课程和部门查看教师选择情况。</p></div><div class="button-row"><a class="button" href="{% url 'export_unselected_teachers' %}{% if department %}?department={{ department|urlencode }}{% endif %}">导出未选课教师</a><a class="button primary" href="{% url 'export_results' %}">导出 Excel</a></div></div>
+<form class="filterbar result-filter" method="get"><input name="q" value="{{ query }}" placeholder="搜索课程编号或名称"><select name="department"><option value="">全部部门</option>{% for item in departments %}<option value="{{ item }}" {% if item == department %}selected{% endif %}>{{ item }}</option>{% endfor %}</select><button class="button" type="submit">筛选</button></form>
+<div class="result-list">{% for course in courses %}<section class="result-row"><div class="result-course"><strong>{{ course.name }}</strong><span>{{ course.code }} · {{ course.category|default:"未分类" }}</span></div><div class="capacity"><strong>{{ course.selection_total }}/{% if department %}{{ course.capacity }}{% else %}{{ course.capacity }}{% endif %}</strong><span>{% if department %}该部门已选{% else %}已选 / 名额{% endif %}</span></div><div class="name-list">{% for item in course.filtered_selections %}<span>{{ item.teacher.display_name }}{% if item.teacher.department %} · {{ item.teacher.department }}{% endif %}</span>{% empty %}<span class="muted">暂无符合筛选条件的教师</span>{% endfor %}</div></section>{% empty %}<div class="empty-state">还没有符合条件的课程。</div>{% endfor %}</div>
 {% endblock %}

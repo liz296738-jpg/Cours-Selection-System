@@ -133,7 +133,7 @@ class ImportTests(BaseCase):
         stream.seek(0)
         stream.name = "import.xlsx"
         self.client.login(username="admin", password="AdminPass123")
-        return self.client.post(url, {"file": stream})
+        return self.client.post(url, {"file": stream, "action": "preview"})
 
     def test_course_excel_import(self):
         response = self._upload(
@@ -141,6 +141,8 @@ class ImportTests(BaseCase):
             ["课程编号", "课程名称", "课程类别", "名额", "课程说明"],
             ["KC100", "测试课程", "通识", 6, "说明"],
         )
+        self.assertContains(response, "确认导入")
+        response = self.client.post(reverse("import_courses"), {"action": "confirm"})
         self.assertRedirects(response, reverse("course_list"))
         self.assertTrue(Course.objects.filter(code="KC100", capacity=6).exists())
 
@@ -150,10 +152,34 @@ class ImportTests(BaseCase):
             ["登录账号", "姓名", "部门", "初始密码"],
             ["teacher99", "王老师", "就业科", "TeacherPass999"],
         )
+        self.assertContains(response, "确认导入")
+        response = self.client.post(reverse("import_teachers"), {"action": "confirm"})
         self.assertRedirects(response, reverse("teacher_list"))
         user = User.objects.get(username="teacher99")
         self.assertTrue(user.check_password("TeacherPass999"))
         self.assertTrue(user.must_change_password)
+
+    def test_course_import_rejects_capacity_below_existing_selection(self):
+        self.course.capacity = 2
+        self.course.save()
+        other = User.objects.create_user(username="teacher02", password="TeacherPass123", display_name="李老师", role=User.Role.TEACHER)
+        select_course(teacher=self.teacher, course_id=self.course.pk)
+        select_course(teacher=other, course_id=self.course.pk)
+        response = self._upload(
+            reverse("import_courses"),
+            ["课程编号", "课程名称", "课程类别", "名额", "课程说明"],
+            ["KC001", "就业指导", "通识", 1, "说明"],
+        )
+        self.assertContains(response, "名额不能低于当前已选教师人数")
+
+    def test_import_requires_confirmation_before_writing(self):
+        response = self._upload(
+            reverse("import_courses"),
+            ["课程编号", "课程名称", "课程类别", "名额", "课程说明"],
+            ["KC101", "预览课程", "通识", 6, "说明"],
+        )
+        self.assertContains(response, "确认导入")
+        self.assertFalse(Course.objects.filter(code="KC101").exists())
 
 
 class PublicTests(TestCase):

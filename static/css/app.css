@@ -82,6 +82,9 @@ button, input, textarea, select { font: inherit; letter-spacing: 0; }
 .empty, .empty-state { text-align: center !important; padding: 36px !important; color: var(--muted); }
 .filterbar { display: flex; gap: 8px; margin-bottom: 14px; }
 .filterbar input { flex: 1; max-width: 420px; height: 40px; border: 1px solid #bdc7d5; border-radius: 5px; padding: 8px 11px; background: #fff; }
+.filterbar select { min-height: 40px; border: 1px solid #bdc7d5; border-radius: 5px; padding: 7px 10px; background: #fff; color: var(--ink); }
+.pagination { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 14px; color: var(--muted); font-size: 13px; }
+.pagination > div { display: flex; gap: 8px; }
 
 .narrow { max-width: 760px; margin: 0 auto; }
 .form-panel { padding: 24px; }
@@ -111,6 +114,12 @@ textarea.form-control { resize: vertical; }
 .guide { border-left: 3px solid var(--blue); padding: 12px 0 12px 20px; }
 .guide h2 { font-size: 17px; margin-top: 0; }
 .guide p { color: var(--muted); font-size: 14px; }
+.file-picker { position: relative; display: grid; gap: 5px; padding: 15px; border: 1px dashed #91a1b8; border-radius: 5px; cursor: pointer; background: #f8fafc; margin-bottom: 12px; }
+.file-picker:hover { border-color: var(--blue); background: #f4f7ff; }
+.file-picker input { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+.file-picker span { color: var(--blue); font-weight: 700; }
+.file-picker small { color: var(--muted); overflow-wrap: anywhere; }
+.preview-list { display: grid; gap: 6px; margin: 14px 0 20px; padding: 12px; background: #f8fafc; border: 1px solid var(--line); font-size: 13px; }
 
 .result-list { display: grid; gap: 10px; }
 .result-row { display: grid; grid-template-columns: 1fr 110px 1.7fr; gap: 20px; align-items: center; background: #fff; border: 1px solid var(--line); padding: 16px 18px; }
@@ -158,6 +167,8 @@ textarea.form-control { resize: vertical; }
   .page-heading { align-items: flex-start; flex-direction: column; }
   .page-heading .button-row { width: 100%; }
   .page-heading .button-row .button { flex: 1; }
+  .filterbar { flex-wrap: wrap; }
+  .filterbar input { max-width: none; min-width: 100%; }
   .status-band { align-items: flex-start; flex-direction: column; gap: 6px; }
   .stat-grid, .course-grid { grid-template-columns: 1fr; }
   .stat:last-child { grid-column: auto; }
