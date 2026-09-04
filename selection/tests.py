@@ -187,3 +187,14 @@ class PublicTests(TestCase):
         response = Client().get(reverse("health"))
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.content, b"ok")
+
+    def test_login_page_has_accessible_controls(self):
+        response = Client().get(reverse("login"))
+        self.assertContains(response, "西南科技大学 · 招生就业处")
+        self.assertContains(response, 'autocomplete="username"')
+        self.assertContains(response, 'autocomplete="current-password"')
+        self.assertContains(response, "data-password-toggle")
+
+    def test_login_failure_shows_inline_error(self):
+        response = Client().post(reverse("login"), {"username": "missing", "password": "incorrect"})
+        self.assertContains(response, "账号或密码错误，请重新输入。")

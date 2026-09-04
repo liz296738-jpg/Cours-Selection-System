@@ -61,6 +61,24 @@
         label.textContent = input.files[0] ? input.files[0].name : "未选择文件";
       });
     });
+    document.querySelectorAll("[data-password-toggle]").forEach((button) => {
+      button.addEventListener("click", () => {
+        const input = document.getElementById(button.getAttribute("aria-controls"));
+        const visible = input.type === "text";
+        input.type = visible ? "password" : "text";
+        button.textContent = visible ? "显示" : "隐藏";
+        button.setAttribute("aria-pressed", String(!visible));
+      });
+    });
+    document.querySelectorAll("[data-login-form]").forEach((form) => {
+      form.addEventListener("submit", () => {
+        const button = form.querySelector("[data-login-button]");
+        if (!button || button.disabled) return;
+        button.disabled = true;
+        button.classList.add("is-loading");
+        button.querySelector("[data-login-label]").textContent = "正在登录...";
+      });
+    });
   </script>
 </body>
 </html>
