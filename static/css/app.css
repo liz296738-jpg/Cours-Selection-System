@@ -110,7 +110,7 @@ textarea.form-control { min-height: 105px; resize: vertical; }
 .message.success { border-color: #c7e8d1; background: #effaf2; color: #176938; }
 .message.error { border-color: #f0c3be; background: #fff4f2; color: #b3261e; }
 
-.auth-main { position: relative; display: grid; min-height: calc(100vh - 52px); place-items: center; overflow: hidden; padding: 40px 30px; background: radial-gradient(560px 420px at 8% 4%, rgba(255, 214, 102, .12), transparent 72%), radial-gradient(560px 420px at 92% 96%, rgba(90, 200, 160, .10), transparent 72%), #f5f5f7; }
+.auth-main { position: relative; display: grid; min-height: calc(100vh - 52px); place-items: center; overflow: hidden; padding: 40px 30px; background: radial-gradient(circle at 10% 20%, rgba(255, 205, 90, .23) 0%, rgba(255, 205, 90, .10) 30%, transparent 58%), radial-gradient(circle at 90% 80%, rgba(70, 190, 145, .21) 0%, rgba(70, 190, 145, .09) 32%, transparent 60%), #f5f5f7; }
 .auth-main::before { display: none; }
 .auth-main > * { position: relative; z-index: 1; }
 .auth-main + .footer { display: none; }
