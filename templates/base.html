@@ -10,25 +10,24 @@
 <body>
   {% if user.is_authenticated %}
   <header class="topbar">
-    <a class="brand" href="{% url 'dashboard' %}">
-      <span class="brand-mark">招</span>
-      <span><strong>教师选课系统</strong><small>招生就业处</small></span>
-    </a>
-    <nav class="topnav" aria-label="主导航">
-      {% if user.is_portal_admin %}
-        <a href="{% url 'control_dashboard' %}">概览</a>
-        <a href="{% url 'course_list' %}">课程</a>
-        <a href="{% url 'teacher_list' %}">教师</a>
-        <a href="{% url 'results' %}">选课结果</a>
-        <a href="{% url 'settings_edit' %}">选课设置</a>
-      {% else %}
-        <a href="{% url 'teacher_courses' %}">课程大厅</a>
-        <a href="{% url 'my_selections' %}">我的选课</a>
-      {% endif %}
-    </nav>
-    <div class="account">
-      <span>{{ user.display_name|default:user.username }}</span>
-      <form method="post" action="{% url 'logout' %}">{% csrf_token %}<button class="link-button" type="submit">退出</button></form>
+    <div class="topbar-inner">
+      <a class="brand" href="{% url 'dashboard' %}">
+        <span class="brand-mark">招</span>
+        <span><strong>教师选课</strong><small>招生就业处</small></span>
+      </a>
+      <nav class="topnav" aria-label="主导航">
+        {% if user.is_portal_admin %}
+          <a class="{% if request.resolver_match.url_name == 'control_dashboard' %}active{% endif %}" href="{% url 'control_dashboard' %}">概览</a>
+          <a class="{% if request.resolver_match.url_name == 'course_list' or request.resolver_match.url_name == 'course_create' or request.resolver_match.url_name == 'course_edit' or request.resolver_match.url_name == 'import_courses' %}active{% endif %}" href="{% url 'course_list' %}">课程</a>
+          <a class="{% if request.resolver_match.url_name == 'teacher_list' or request.resolver_match.url_name == 'teacher_create' or request.resolver_match.url_name == 'teacher_edit' or request.resolver_match.url_name == 'import_teachers' %}active{% endif %}" href="{% url 'teacher_list' %}">教师</a>
+          <a class="{% if request.resolver_match.url_name == 'results' %}active{% endif %}" href="{% url 'results' %}">选课结果</a>
+          <a class="{% if request.resolver_match.url_name == 'settings_edit' %}active{% endif %}" href="{% url 'settings_edit' %}">选课设置</a>
+        {% else %}
+          <a class="{% if request.resolver_match.url_name == 'teacher_courses' %}active{% endif %}" href="{% url 'teacher_courses' %}">课程大厅</a>
+          <a class="{% if request.resolver_match.url_name == 'my_selections' %}active{% endif %}" href="{% url 'my_selections' %}">我的选课</a>
+        {% endif %}
+      </nav>
+      <div class="account"><span class="account-name">{{ user.display_name|default:user.username }}</span><form method="post" action="{% url 'logout' %}">{% csrf_token %}<button class="link-button" type="submit">退出</button></form></div>
     </div>
   </header>
   {% endif %}
