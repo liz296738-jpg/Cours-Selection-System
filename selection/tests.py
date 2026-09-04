@@ -191,6 +191,7 @@ class PublicTests(TestCase):
     def test_login_page_has_accessible_controls(self):
         response = Client().get(reverse("login"))
         self.assertContains(response, "西南科技大学 · 招生就业处")
+        self.assertContains(response, "选课系统")
         self.assertContains(response, 'autocomplete="username"')
         self.assertContains(response, 'autocomplete="current-password"')
         self.assertContains(response, "data-password-toggle")
