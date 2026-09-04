@@ -110,8 +110,8 @@ textarea.form-control { min-height: 105px; resize: vertical; }
 .message.success { border-color: #c7e8d1; background: #effaf2; color: #176938; }
 .message.error { border-color: #f0c3be; background: #fff4f2; color: #b3261e; }
 
-.auth-main { position: relative; display: grid; min-height: calc(100vh - 52px); place-items: center; overflow: hidden; padding: 30px; background-color: #d8e7f5; animation: login-breathe 20s ease-in-out infinite alternate; }
-.auth-main::before { position: absolute; inset: 0; background-image: linear-gradient(rgba(19, 83, 145, .105) 1px, transparent 1px), linear-gradient(90deg, rgba(19, 83, 145, .105) 1px, transparent 1px); background-position: center; background-size: 48px 48px; content: ""; pointer-events: none; }
+.auth-main { position: relative; display: grid; min-height: calc(100vh - 52px); place-items: center; overflow: hidden; padding: 30px; background-color: #d6e6fb; background-image: linear-gradient(120deg, #ffd1df, #ffe0b8, #fff0ae, #ccefd3, #c4eff1, #c9dcff, #e5ccff, #ffd1df); background-size: 360% 360%; animation: login-spectrum 16s ease-in-out infinite; }
+.auth-main::before { position: absolute; inset: 0; background-image: linear-gradient(rgba(255, 255, 255, .27) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, .27) 1px, transparent 1px); background-position: center; background-size: 48px 48px; content: ""; pointer-events: none; }
 .auth-main > * { position: relative; z-index: 1; }
 .auth-main + .footer { display: none; }
 .login-shell { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 400px); align-items: center; gap: 90px; width: min(930px, 100%); }
@@ -158,9 +158,9 @@ textarea.form-control { min-height: 105px; resize: vertical; }
 .notice { margin-bottom: 15px; padding: 13px 15px; border: 1px solid #f0d692; border-radius: 13px; background: #fff9e8; color: #6c5109; font-size: 14px; }
 .muted { color: var(--muted); }
 
-@keyframes login-breathe {
-  from { background-color: #d8e7f5; }
-  to { background-color: #bdd4eb; }
+@keyframes login-spectrum {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
 }
 
 @media (prefers-reduced-motion: reduce) {
