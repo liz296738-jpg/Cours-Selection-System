@@ -76,7 +76,8 @@ class Course(models.Model):
 
     @property
     def remaining(self):
-        return max(0, self.capacity - self.selected_count)
+        selected_count = self.selection_total if hasattr(self, "selection_total") else self.selected_count
+        return max(0, self.capacity - selected_count)
 
     def __str__(self):
         return f"{self.code} {self.name}"

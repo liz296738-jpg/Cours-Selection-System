@@ -19,13 +19,14 @@ class SiteSettingForm(StyledFormMixin, forms.ModelForm):
         widgets = {
             "selection_start": forms.DateTimeInput(attrs={"type": "datetime-local"}, format="%Y-%m-%dT%H:%M"),
             "selection_end": forms.DateTimeInput(attrs={"type": "datetime-local"}, format="%Y-%m-%dT%H:%M"),
-            "notice": forms.TextInput(attrs={"placeholder": "例如：请各位老师在周五前完成选课"}),
+            "notice": forms.Textarea(attrs={"rows": 4, "placeholder": "例如：请各位老师在周五前完成选课"}),
         }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["selection_start"].input_formats = ["%Y-%m-%dT%H:%M"]
         self.fields["selection_end"].input_formats = ["%Y-%m-%dT%H:%M"]
+        self.fields["notice"].label = "教师端公告"
 
     def clean(self):
         cleaned = super().clean()
@@ -49,12 +50,18 @@ class CourseForm(StyledFormMixin, forms.ModelForm):
 
 
 class TeacherForm(StyledFormMixin, forms.ModelForm):
-    password = forms.CharField(label="初始密码", widget=forms.PasswordInput, required=False,
-                               help_text="新建教师时必填；编辑时留空表示不修改。")
+    password = forms.CharField(label="重置密码", widget=forms.PasswordInput, required=False,
+                               help_text="留空则不修改密码。")
 
     class Meta:
         model = User
         fields = ["username", "display_name", "department", "is_active"]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if not self.instance.pk:
+            self.fields["password"].label = "初始密码"
+            self.fields["password"].help_text = "新建教师时必填。"
 
     def clean_password(self):
         value = self.cleaned_data.get("password")

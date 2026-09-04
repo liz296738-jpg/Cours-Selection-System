@@ -2,5 +2,5 @@
 {% block title %}{% if course %}编辑{% else %}新增{% endif %}课程{% endblock %}
 {% block content %}
 <div class="narrow"><div class="page-heading"><div><p class="eyebrow">课程管理</p><h1>{% if course %}编辑课程{% else %}新增课程{% endif %}</h1></div><a class="button" href="{% url 'course_list' %}">返回列表</a></div>
-<form method="post" class="panel form-panel">{% csrf_token %}{{ form.as_p }}<div class="form-actions"><button class="button primary" type="submit">保存课程</button></div></form></div>
+<form method="post" class="panel form-panel" data-submit-form data-confirm-course-deactivation="{% if course %}停用后教师不能再选择该课程。{% if course_selection_total %}当前已有 {{ course_selection_total }} 位教师选择。{% endif %} 是否继续？{% endif %}">{% csrf_token %}{{ form.as_p }}<div class="form-actions"><button class="button primary" type="submit">保存课程</button></div></form></div>
 {% endblock %}

@@ -6,9 +6,10 @@ from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.core.paginator import Paginator
-from django.db.models import Count, Prefetch, Q
+from django.db.models import Count, F, Prefetch, Q
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.utils import timezone
 from django.views.decorators.http import require_POST
 from openpyxl import Workbook
 from openpyxl.styles import Font, PatternFill
@@ -71,17 +72,27 @@ def settings_edit(request):
                                 detail=f"每人最多 {setting.max_courses_per_teacher} 门")
         messages.success(request, "选课设置已保存。")
         return redirect("settings_edit")
-    return render(request, "selection/settings_form.html", {"form": form, "setting": setting})
+    return render(request, "selection/settings_form.html", {
+        "form": form, "setting": setting, "selection_status": _selection_status(setting),
+    })
 
 
 @portal_admin_required
 def course_list(request):
     query = request.GET.get("q", "").strip()
+    status = request.GET.get("status", "").strip()
     courses = Course.objects.annotate(selection_total=Count("selections")).order_by("code", "id")
     if query:
         courses = courses.filter(Q(code__icontains=query) | Q(name__icontains=query) | Q(category__icontains=query))
+    if status == "available":
+        courses = courses.filter(is_active=True, selection_total__lt=F("capacity"))
+    elif status == "full":
+        courses = courses.filter(is_active=True, selection_total__gte=F("capacity"))
+    elif status == "inactive":
+        courses = courses.filter(is_active=False)
     return render(request, "selection/course_list.html", {
-        "courses": _paginate(request, courses), "query": query, "page_size": _page_size(request),
+        "courses": _paginate(request, courses), "query": query, "status": status,
+        "page_size": _page_size(request), "pagination_params": _pagination_params(request),
     })
 
 
@@ -97,7 +108,10 @@ def course_edit(request, pk=None):
         AuditLog.objects.create(user=request.user, action="编辑课程" if course else "新增课程", detail=str(obj))
         messages.success(request, "课程已保存。")
         return redirect("course_list")
-    return render(request, "selection/course_form.html", {"form": form, "course": course})
+    return render(request, "selection/course_form.html", {
+        "form": form, "course": course,
+        "course_selection_total": course.selections.count() if course else 0,
+    })
 
 
 @portal_admin_required
@@ -115,12 +129,23 @@ def course_toggle(request, pk):
 def teacher_list(request):
     teachers = User.objects.filter(role=User.Role.TEACHER).annotate(selection_total=Count("selections")).order_by("username", "id")
     query = request.GET.get("q", "").strip()
+    department = request.GET.get("department", "").strip()
+    selection_status = request.GET.get("selection_status", "").strip()
     if query:
         teachers = teachers.filter(
             Q(username__icontains=query) | Q(display_name__icontains=query) | Q(department__icontains=query)
         )
+    if department:
+        teachers = teachers.filter(department=department)
+    if selection_status == "selected":
+        teachers = teachers.filter(selection_total__gt=0)
+    elif selection_status == "unselected":
+        teachers = teachers.filter(selection_total=0)
+    departments = User.objects.filter(role=User.Role.TEACHER).exclude(department="").order_by("department").values_list("department", flat=True).distinct()
     return render(request, "selection/teacher_list.html", {
-        "teachers": _paginate(request, teachers), "query": query, "page_size": _page_size(request),
+        "teachers": _paginate(request, teachers), "query": query, "department": department,
+        "selection_status": selection_status, "departments": departments, "page_size": _page_size(request),
+        "pagination_params": _pagination_params(request),
     })
 
 
@@ -149,6 +174,23 @@ def _page_size(request):
 
 def _paginate(request, queryset):
     return Paginator(queryset, _page_size(request)).get_page(request.GET.get("page"))
+
+
+def _pagination_params(request):
+    params = request.GET.copy()
+    params.pop("page", None)
+    return params.urlencode()
+
+
+def _selection_status(setting):
+    now = timezone.now()
+    if not setting.selection_enabled:
+        return {"label": "已手动关闭", "tone": "closed"}
+    if setting.selection_start and now < setting.selection_start:
+        return {"label": "未开始", "tone": "pending"}
+    if setting.selection_end and now > setting.selection_end:
+        return {"label": "已截止", "tone": "closed"}
+    return {"label": "进行中", "tone": "open"}
 
 
 def _pending_import_key(kind):
@@ -276,18 +318,35 @@ def download_template(request, kind):
 def results(request):
     query = request.GET.get("q", "").strip()
     department = request.GET.get("department", "").strip()
-    selected = Selection.objects.select_related("teacher").order_by("selected_at")
-    if department:
-        selected = selected.filter(teacher__department=department)
-    count_filter = Q(selections__teacher__department=department) if department else Q()
-    courses = Course.objects.annotate(selection_total=Count("selections", filter=count_filter))
-    if query:
-        courses = courses.filter(Q(code__icontains=query) | Q(name__icontains=query))
-    courses = courses.prefetch_related(Prefetch("selections", queryset=selected, to_attr="filtered_selections"))
+    result_view = request.GET.get("view", "course")
+    if result_view not in {"course", "teacher"}:
+        result_view = "course"
     departments = User.objects.filter(role=User.Role.TEACHER).exclude(department="").order_by("department").values_list("department", flat=True).distinct()
-    return render(request, "selection/results.html", {
-        "courses": courses, "query": query, "department": department, "departments": departments,
-    })
+    context = {"query": query, "department": department, "departments": departments, "result_view": result_view}
+    if result_view == "teacher":
+        teachers = User.objects.filter(role=User.Role.TEACHER)
+        if department:
+            teachers = teachers.filter(department=department)
+        if query:
+            teachers = teachers.filter(
+                Q(display_name__icontains=query) | Q(username__icontains=query) |
+                Q(selections__course__code__icontains=query) | Q(selections__course__name__icontains=query)
+            ).distinct()
+        selected = Selection.objects.select_related("course").order_by("selected_at")
+        teachers = teachers.annotate(selection_total=Count("selections")).prefetch_related(
+            Prefetch("selections", queryset=selected, to_attr="result_selections")
+        ).order_by("department", "display_name", "username")
+        context["teachers"] = teachers
+    else:
+        selected = Selection.objects.select_related("teacher").order_by("selected_at")
+        if department:
+            selected = selected.filter(teacher__department=department)
+        count_filter = Q(selections__teacher__department=department) if department else Q()
+        courses = Course.objects.annotate(selection_total=Count("selections", filter=count_filter))
+        if query:
+            courses = courses.filter(Q(code__icontains=query) | Q(name__icontains=query))
+        context["courses"] = courses.prefetch_related(Prefetch("selections", queryset=selected, to_attr="filtered_selections"))
+    return render(request, "selection/results.html", context)
 
 
 @portal_admin_required

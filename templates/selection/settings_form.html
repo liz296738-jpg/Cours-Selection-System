@@ -1,9 +1,10 @@
 {% extends "base.html" %}
 {% block title %}选课设置{% endblock %}
 {% block content %}
-<div class="page-heading"><div><p class="eyebrow">规则配置</p><h1>选课设置</h1><p>开放状态、时间范围和教师选课数量均由这里控制。</p></div></div>
-<form method="post" class="panel form-panel settings-grid">{% csrf_token %}
+<div class="narrow"><div class="page-heading"><div><p class="eyebrow">规则配置</p><h1>选课设置</h1><p>开放状态、时间范围和教师选课数量均由这里控制。</p></div></div>
+<section class="setting-summary {{ selection_status.tone }}"><div><span class="status-dot"></span><strong>当前状态：{{ selection_status.label }}</strong></div><dl><div><dt>开始时间</dt><dd>{% if setting.selection_start %}{{ setting.selection_start|date:"Y-m-d H:i" }} 中国标准时间{% else %}未设置{% endif %}</dd></div><div><dt>截止时间</dt><dd>{% if setting.selection_end %}{{ setting.selection_end|date:"Y-m-d H:i" }} 中国标准时间{% else %}未设置{% endif %}</dd></div></dl></section>
+<form method="post" class="panel form-panel settings-grid" data-selection-settings data-initial-enabled="{% if setting.selection_enabled %}true{% else %}false{% endif %}" data-submit-form>{% csrf_token %}
   {{ form.as_p }}
   <div class="form-actions"><button class="button primary" type="submit">保存设置</button></div>
-</form>
+</form></div>
 {% endblock %}

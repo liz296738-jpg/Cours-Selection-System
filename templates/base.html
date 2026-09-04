@@ -13,7 +13,7 @@
     <div class="topbar-inner">
       <a class="brand" href="{% url 'dashboard' %}">
         <span class="brand-mark">招</span>
-        <span><strong>教师选课</strong><small>招生就业处</small></span>
+        <span><strong>选课系统</strong><small>招生就业处</small></span>
       </a>
       <nav class="topnav" aria-label="主导航">
         {% if user.is_portal_admin %}
@@ -55,6 +55,14 @@
         }
       });
     });
+    document.querySelectorAll("form[data-confirm-course-deactivation]").forEach((form) => {
+      form.addEventListener("submit", (event) => {
+        const active = form.querySelector("#id_is_active");
+        if (active && !active.checked && form.dataset.confirmCourseDeactivation && !window.confirm(form.dataset.confirmCourseDeactivation)) {
+          event.preventDefault();
+        }
+      });
+    });
     document.querySelectorAll(".file-picker input").forEach((input) => {
       input.addEventListener("change", () => {
         const label = input.closest(".file-picker").querySelector("[data-file-name]");
@@ -77,6 +85,23 @@
         button.disabled = true;
         button.classList.add("is-loading");
         button.querySelector("[data-login-label]").textContent = "正在登录...";
+      });
+    });
+    document.querySelectorAll("[data-selection-settings]").forEach((form) => {
+      form.addEventListener("submit", (event) => {
+        const enabled = form.querySelector("#id_selection_enabled");
+        if (form.dataset.initialEnabled === "true" && enabled && !enabled.checked && !window.confirm("关闭选课后教师将不能继续选择或取消课程。是否确认关闭？")) {
+          event.preventDefault();
+        }
+      });
+    });
+    document.querySelectorAll("[data-submit-form]").forEach((form) => {
+      form.addEventListener("submit", (event) => {
+        if (event.defaultPrevented) return;
+        const button = event.submitter || form.querySelector("button[type=submit]");
+        if (!button || button.disabled) return;
+        button.disabled = true;
+        button.classList.add("is-submitting");
       });
     });
   </script>

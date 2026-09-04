@@ -52,6 +52,7 @@ button, input, textarea, select { font: inherit; letter-spacing: 0; }
 .button.small { min-height: 31px; padding: 5px 11px; font-size: 12px; }
 .button.wide { width: 100%; margin-top: 10px; min-height: 42px; }
 .button:disabled { cursor: not-allowed; opacity: .45; transform: none; }
+.button.is-submitting { cursor: wait; }
 .panel { background: rgba(255, 255, 255, .9); border: 1px solid rgba(0, 0, 0, .08); border-radius: 18px; box-shadow: var(--shadow); }
 
 .status-band { display: flex; align-items: center; justify-content: space-between; gap: 20px; margin-bottom: 22px; padding: 15px 18px; border: 1px solid #d8d8dc; border-radius: 14px; background: #efeff1; }
@@ -86,6 +87,8 @@ button, input, textarea, select { font: inherit; letter-spacing: 0; }
 .compact table { min-width: 500px; }
 .badge { display: inline-flex; align-items: center; min-height: 22px; padding: 2px 8px; border-radius: 980px; background: #efeff1; color: #5f5f63; font-size: 11px; font-weight: 700; }
 .badge.success { background: #e5f7eb; color: #16743a; }
+.badge.warning { background: #fff3d6; color: #8a5600; }
+.danger-link { color: var(--red); }
 .empty, .empty-state { padding: 40px !important; color: var(--muted); text-align: center !important; }
 
 .filterbar { display: flex; gap: 8px; margin-bottom: 16px; }
@@ -95,6 +98,10 @@ button, input, textarea, select { font: inherit; letter-spacing: 0; }
 .filterbar input:focus, .filterbar select:focus, .form-control:focus, .form-panel input:focus, .login-form input:focus { outline: 3px solid rgba(0, 113, 227, .18); border-color: var(--blue); }
 .pagination { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 15px; color: var(--muted); font-size: 13px; }
 .pagination > div { display: flex; gap: 8px; }
+.view-switch { display: inline-flex; gap: 3px; margin: 0 0 16px; padding: 3px; border-radius: 10px; background: #e9e9ed; }
+.view-switch a { padding: 6px 11px; border-radius: 8px; color: #515154; font-size: 13px; font-weight: 600; }
+.view-switch a.active { background: #fff; box-shadow: 0 1px 3px rgba(0, 0, 0, .10); color: #1d1d1f; }
+.inline-name { display: inline-block; margin: 2px 5px 2px 0; padding: 3px 7px; border-radius: 7px; background: #f1f1f4; color: #515154; font-size: 12px; }
 
 .narrow { max-width: 760px; margin: 0 auto; }
 .form-panel { padding: 26px; }
@@ -104,6 +111,18 @@ button, input, textarea, select { font: inherit; letter-spacing: 0; }
 .form-control, .form-panel input[type=text], .form-panel input[type=password], .form-panel input[type=number], .form-panel input[type=datetime-local], .login-form input { width: 100%; min-height: 43px; padding: 9px 12px; border: 1px solid rgba(0, 0, 0, .15); border-radius: 12px; background: #fff; color: var(--ink); }
 textarea.form-control { min-height: 105px; resize: vertical; }
 .form-actions { padding-top: 7px; }
+.setting-summary { margin: 0 0 18px; padding: 16px 18px; border: 1px solid #d8d8dc; border-radius: 14px; background: #efeff1; }
+.setting-summary.open { border-color: #b9e4c9; background: #edf9f1; }
+.setting-summary.pending { border-color: #c9dcf2; background: #f1f7fe; }
+.setting-summary.closed { border-color: #e1d7d6; background: #faf6f5; }
+.setting-summary > div { display: flex; align-items: center; gap: 9px; }
+.setting-summary.open .status-dot { background: #34c759; }
+.setting-summary.pending .status-dot { background: #0071e3; }
+.setting-summary.closed .status-dot { background: #86868b; }
+.setting-summary dl { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 24px; margin: 14px 0 0 17px; }
+.setting-summary dt { color: #6e6e73; font-size: 12px; }
+.setting-summary dd { margin: 2px 0 0; color: #1d1d1f; font-size: 13px; }
+.import-summary { display: flex; flex-wrap: wrap; gap: 8px 16px; margin: 10px 0; color: #515154; font-size: 14px; }
 .errorlist, .field-error { margin: 0 0 10px; padding: 10px 12px; border: 1px solid #f2c6c2; border-radius: 11px; background: #fff4f3; color: var(--red); font-size: 13px; list-style: none; }
 .messages { display: grid; gap: 8px; margin-bottom: 19px; }
 .message { padding: 12px 14px; border: 1px solid #ccdff5; border-radius: 12px; background: #f2f8ff; color: #174d7e; font-size: 14px; }

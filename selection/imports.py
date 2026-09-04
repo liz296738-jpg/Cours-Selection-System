@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from django.contrib.auth.hashers import make_password
 from openpyxl import load_workbook
@@ -16,6 +16,7 @@ class ImportPreview:
     rows: list[dict]
     created: int
     updated: int
+    errors: list[str] = field(default_factory=list)
 
 
 def _cell(row, index):

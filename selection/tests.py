@@ -121,6 +121,38 @@ class SettingsTests(BaseCase):
         self.setting.refresh_from_db()
         self.assertEqual(self.setting.max_courses_per_teacher, 3)
 
+    def test_settings_page_shows_current_selection_state(self):
+        self.client.login(username="admin", password="AdminPass123")
+        response = self.client.get(reverse("settings_edit"))
+        self.assertContains(response, "当前状态：进行中")
+        self.assertContains(response, "教师端公告")
+
+
+class AdminWorkflowTests(BaseCase):
+    def setUp(self):
+        super().setUp()
+        self.teacher.department = "招生就业处"
+        self.teacher.save(update_fields=["department"])
+        select_course(teacher=self.teacher, course_id=self.course.pk)
+        self.inactive_course = Course.objects.create(
+            code="KC002", name="已停用课程", capacity=5, is_active=False, created_by=self.admin,
+        )
+        self.client.login(username="admin", password="AdminPass123")
+
+    def test_course_status_filters(self):
+        response = self.client.get(reverse("course_list"), {"status": "full"})
+        self.assertContains(response, "就业指导")
+        self.assertNotContains(response, "已停用课程")
+        response = self.client.get(reverse("course_list"), {"status": "inactive"})
+        self.assertContains(response, "已停用课程")
+
+    def test_teacher_filters_and_teacher_result_view(self):
+        response = self.client.get(reverse("teacher_list"), {"department": "招生就业处", "selection_status": "selected"})
+        self.assertContains(response, "张老师")
+        response = self.client.get(reverse("results"), {"view": "teacher", "q": "teacher01"})
+        self.assertContains(response, "张老师")
+        self.assertContains(response, "就业指导")
+
 
 class ImportTests(BaseCase):
     def _upload(self, url, headers, row):
