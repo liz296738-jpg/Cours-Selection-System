@@ -3,7 +3,7 @@
 {% block content %}
 <div class="page-heading"><div><p class="eyebrow">个人选课</p><h1>我的选课</h1><p>最多可选择 {{ setting.max_courses_per_teacher }} 门，截止前可以取消后重新选择。</p></div><a class="button primary" href="{% url 'teacher_courses' %}">继续选课</a></div>
 <div class="table-wrap"><table><thead><tr><th>课程</th><th>类别</th><th>选课时间</th><th class="right">操作</th></tr></thead><tbody>
-{% for item in items %}<tr><td><strong>{{ item.course.name }}</strong><small>{{ item.course.code }}</small></td><td>{{ item.course.category|default:"—" }}</td><td>{{ item.selected_at|date:"Y-m-d H:i" }}</td><td class="right">{% if setting.is_open %}<form method="post" action="{% url 'cancel_course' item.pk %}" onsubmit="return confirm('确定取消这门课程吗？')">{% csrf_token %}<button class="button danger small" type="submit">取消选择</button></form>{% else %}<span class="muted">已锁定</span>{% endif %}</td></tr>
+{% for item in items %}<tr><td><strong>{{ item.course.name }}</strong><small>{{ item.course.code }}</small></td><td>{{ item.course.category|default:"—" }}</td><td>{{ item.selected_at|date:"Y-m-d H:i" }}</td><td class="right">{% if setting.is_open %}<form method="post" action="{% url 'cancel_course' item.pk %}" data-submit-form onsubmit="return confirm('确定取消这门课程吗？')">{% csrf_token %}<button class="button danger small" type="submit">取消选择</button></form>{% else %}<span class="muted">已锁定</span>{% endif %}</td></tr>
 {% empty %}<tr><td colspan="4" class="empty">你还没有选择课程。</td></tr>{% endfor %}
 </tbody></table></div>
 {% endblock %}

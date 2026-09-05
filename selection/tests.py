@@ -203,6 +203,8 @@ class ImportTests(BaseCase):
             ["KC001", "就业指导", "通识", 1, "说明"],
         )
         self.assertContains(response, "名额不能低于当前已选教师人数")
+        self.assertContains(response, "错误")
+        self.assertNotContains(response, "确认导入")
 
     def test_import_requires_confirmation_before_writing(self):
         response = self._upload(

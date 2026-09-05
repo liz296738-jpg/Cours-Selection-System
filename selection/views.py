@@ -203,8 +203,11 @@ def _preview_import(request, kind, parser):
     if request.method == "POST" and request.POST.get("action") == "preview" and form.is_valid():
         try:
             parsed = parser(form.cleaned_data["file"])
-            request.session[_pending_import_key(kind)] = {"rows": parsed.rows}
-            request.session.modified = True
+            if not parsed.errors:
+                request.session[_pending_import_key(kind)] = {"rows": parsed.rows}
+                request.session.modified = True
+            else:
+                request.session.pop(_pending_import_key(kind), None)
             preview = parsed
         except ValueError as exc:
             form.add_error("file", str(exc))

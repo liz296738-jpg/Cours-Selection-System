@@ -123,6 +123,7 @@ textarea.form-control { min-height: 105px; resize: vertical; }
 .setting-summary dt { color: #6e6e73; font-size: 12px; }
 .setting-summary dd { margin: 2px 0 0; color: #1d1d1f; font-size: 13px; }
 .import-summary { display: flex; flex-wrap: wrap; gap: 8px 16px; margin: 10px 0; color: #515154; font-size: 14px; }
+.import-errors { margin: 14px 0; padding: 12px 16px; border: 1px solid #f0c3be; border-radius: 11px; background: #fff4f2; color: #b3261e; font-size: 13px; }
 .errorlist, .field-error { margin: 0 0 10px; padding: 10px 12px; border: 1px solid #f2c6c2; border-radius: 11px; background: #fff4f3; color: var(--red); font-size: 13px; list-style: none; }
 .messages { display: grid; gap: 8px; margin-bottom: 19px; }
 .message { padding: 12px 14px; border: 1px solid #ccdff5; border-radius: 12px; background: #f2f8ff; color: #174d7e; font-size: 14px; }
